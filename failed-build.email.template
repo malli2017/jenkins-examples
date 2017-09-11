@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<head>
+  <title>Build report</title>
+  <style type="text/css">
+    body
+    {
+      margin: 0px;
+      padding: 15px;
+    }
+	
+	body, td, th
+    {
+      font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, Tahoma, sans-serif;
+      font-size: 10pt;
+    }
+	
+	a
+	{
+	  color: #0097a7;
+	}
+	
+	a:visited {
+      text-decoration: underline;
+      color: #5c3566;
+	}	
+
+
+    th
+    {
+      text-align: left;
+    }
+
+    h1
+    {
+      margin-top: 0px;
+    }
+
+    li
+    {
+      line-height: 15pt;
+    }
+
+    .change-add
+    {
+      color: #272;
+    }
+
+    .change-delete
+    {
+      color: #722;
+    }
+
+    .change-edit
+    {
+      color: #247;
+    }
+
+    .grayed
+    {
+      color: #AAA;
+    }
+
+    .error
+    {
+      color: #A33;
+    }
+
+    pre.console
+    {
+      color: #333;
+      font-family: "Lucida Console", "Courier New";
+      padding: 5px;
+      line-height: 15px;
+      background-color: #EEE;
+      border: 1px solid #DDD;
+    }
+	
+	.failure
+	{
+	  background-color: #ff5400;
+	  color: #FFF;
+	  padding-left:10px;
+	  padding-right:10px;
+	}
+	
+	.success
+	{
+	  background-color: #2e93b2;
+	  color: #FFF;
+	  padding-left:10px;
+	  padding-right:10px;
+	}
+	
+	.problems
+	{
+	  background-color: #e0d31a;
+	  color: #000;
+	  padding-left:10px;
+	  padding-right:10px;
+	}
+  </style>
+</head>
+<body>
+<% buildStatus = build.result != null ? build.result.toString() : 'SUCCESS' 
+%>
+<h1><span class="${buildStatus.toLowerCase()}">Build ${buildStatus.toUpperCase()}</span></h1>
+<table>
+  <tr><th>Project:</th><td>${project.name}</td></tr>
+  <tr><th>Build URL:</th><td><a href="${rooturl}${build.url}">${rooturl}${build.url}</a></td></tr>
+  <tr><th>Date of build:</th><td>${it.timestampString}</td></tr>
+  <tr><th>Build duration:</th><td>${build.durationString}</td></tr>
+</table>
+
+<!-- CHANGE SET -->
+<% changeSet = build.changeSets
+if (changeSet != null) {
+  hadChanges = false %>
+  <h2>Changes</h2>
+  <ul>
+<% 	changeSet.each { list ->
+      list.logs.each { cs ->
+	    hadChanges = true
+        aUser = cs.author %>
+      <li>Commit <b>${cs.revision}</b> by <b><%= aUser != null ? aUser.displayName : it.author.displayName %>:</b> (${cs.msg})
+        <ul>
+<%        cs.affectedFiles.each { %>
+          <li class="change-${it.editType.name}"><b>${it.editType.name}</b>: ${it.path}</li>
+<%        } %>
+        </ul>
+      </li>
+<%    }
+	}
+  if (!hadChanges) { %>	
+      <li>No Changes</li>
+<%  } %>
+  </ul>
+<% } %>
+
+
+<!-- ARTIFACTS -->
+<% artifacts = build.artifacts
+if (artifacts != null && artifacts.size() > 0) { %>
+  <h2>Build artifacts</h2>
+    <ul>
+<%    artifacts.each() { f -> %>		
+      <li><a href="${rooturl}${build.url}artifact/${f}">${f}</a></li>
+<%    } %>
+    </ul>
+<% } %>
+
+
+<!-- BUILD FAILURE REASONS -->
+<% log = build.getLog(1000)
+   log = log.findAll { it.toLowerCase().contains("[error]") } 
+   logString = log.join("\n") %>
+
+<h2>Console errors</h2>
+<% if (!logString.isEmpty()) {%>
+<pre class="console">${logString}</pre>
+<% } else { %>
+<p>No errors found</p>
+<% } %>
+
+
+<!-- Links-->
+<h2>Links</h2>
+<ul>
+<% 	project.permalinks.each { link -> %>
+      <li><a href="${rooturl}${project.url}${link.id}">${link.displayName}</a></li>
+<%  } %>
+</ul>
+
+* You have received this message because looks like you are involved to a build failure. Please pay your attention to this message.
+
+</body>
